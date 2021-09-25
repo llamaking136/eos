@@ -1,3 +1,3 @@
 func main(int argc) -> void {
-
+	let string hello = "hello world!";
 }

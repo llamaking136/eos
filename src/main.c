@@ -88,6 +88,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    log_silent("======================");
     char *string = read_file(input_file);
     vec_token_t tokens = tokenize(string);
 
