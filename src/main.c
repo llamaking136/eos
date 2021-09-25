@@ -98,6 +98,8 @@ char *read_file(char *name)
 
 int main(int argc, char **argv)
 {
+	int showed_usage = 0;
+
     char *program = shift(&argc, &argv);
 
     char *input_file = NULL;
@@ -109,6 +111,7 @@ int main(int argc, char **argv)
         if (strcmp(argument, "-h") == 0 || strcmp(argument, "--help") == 0)
         {
             usage(stdout, program);
+			showed_usage = 1;
         }
 
         else
@@ -120,8 +123,12 @@ int main(int argc, char **argv)
     if (!input_file)
     {
         /* fprintf(stderr, "No file name provided. Exiting\n"); */ /* This is my personal opinion, change it if you'd like. */
-		usage(stderr, program);
-        return 1;
+		
+		if (!showed_usage)
+		{
+			usage(stderr, program);
+		}
+		return 1;
     }
 
     log_silent("======================");
