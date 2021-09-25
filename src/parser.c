@@ -5,6 +5,9 @@
 
 static Parser parser;
 
+ParseValue parse_statement();
+ParseBlock parse_block();
+
 void parser_expect_token_next(TokenType tok, char *name)
 {
     if (parser.tokens.length < parser.current_index + 1)
@@ -19,6 +22,8 @@ void parser_expect_token_next(TokenType tok, char *name)
     {
         log_error("Expected token '%s' (%s) after line %d, column %d", name, token_to_string((Token){.type = tok}), parser.tokens.data[parser.current_index].line, parser.tokens.data[parser.current_index].column);
     }
+
+    parser.current_token = parser.tokens.data[parser.current_index];
 }
 
 static EosType string_to_type(const char *str)
@@ -126,6 +131,10 @@ static ParseValue parse_function_declaration()
     }
 #endif
 
+    parser.current_index++;
+
+    ret.function_decl.body = parse_block();
+
     return ret;
 }
 
@@ -145,27 +154,31 @@ static ParseValue parse_variable_declaration()
 
     ret.type = VARIABLE_DECL;
 
+    parser.current_index++;
+
+    parser_expect_token_next(TOKEN_SYMBOL, "type");
+
+    ret.var_decl.val.type = string_to_type(parser.tokens.data[parser.current_index].text);
+
     parser_expect_token_next(TOKEN_SYMBOL, "name");
 
     ret.var_decl.name = parser.tokens.data[parser.current_index].text;
 
-    parser_expect_token_next(TOKEN_OPEN_PAREN, "(");
-
     parser_expect_token_next(TOKEN_EQUAL, "=");
 
-    switch (parser.tokens.data[parser.current_index++].type)
+    parser.current_index++;
+
+    switch (ret.var_decl.val.type)
     {
 
-    case TOKEN_STRING:
+    case STRING:
     {
-        ret.var_decl.val.type = STRING;
         ret.var_decl.val.str = parser.tokens.data[parser.current_index].text;
         break;
     }
 
-    case TOKEN_NUMBER:
+    case INT:
     {
-        ret.var_decl.val.type = INT;
         ret.var_decl.val._int = atoi(parser.tokens.data[parser.current_index].text);
         break;
     }
@@ -180,9 +193,8 @@ static ParseValue parse_variable_declaration()
     return ret;
 }
 
-// TODO: implement parse_block function for parsing blocks
-// Blocks are wrapped around {}
-/*ParseBlock parse_block()
+// A block is a series of statement, delimited by {}
+ParseBlock parse_block()
 {
     ParseBlock ret;
 
@@ -190,21 +202,31 @@ static ParseValue parse_variable_declaration()
 
     parser_expect_token_next(TOKEN_OPEN_CURLY, "{");
 
-    while (parser.tokens.data[parser.current_index++].type != TOKEN_CLOSE_CURLY)
-    {
-        ParseValue val = {};
+    parser.current_index++;
 
-        val = parse_statement();
+    parser.current_token = parser.tokens.data[parser.current_index];
+
+    while (parser.current_token.type != TOKEN_CLOSE_CURLY)
+    {
+        if (parser.current_token.type == TOKEN_CLOSE_CURLY)
+            break;
+        else
+            parser.current_index++;
+
+        parser.current_token = parser.tokens.data[parser.current_index];
+
+        ParseValue val = parse_statement();
 
         vec_push(&ret.values, val);
     }
 
     return ret;
-}*/
+}
 
 ParseValue parse_statement()
 {
     ParseValue ret = {};
+
     switch (parser.current_token.type)
     {
     case TOKEN_SYMBOL:
@@ -243,6 +265,7 @@ ParseValueList parse(vec_token_t toks)
     for (int i = 0; i < parser.tokens.length; i++)
     {
         parser.current_token = parser.tokens.data[i];
+
         ParseValue curr_value = parse_statement();
 
         parser.current_index = i;

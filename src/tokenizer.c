@@ -196,8 +196,9 @@ vec_token_t tokenize(char *string)
             curr_tok.line = current_line;
             curr_tok.column = current_column;
             curr_tok.text = get_while_f_is(&scanner, is_digit, true).data;
-
             vec_push(&ret, curr_tok);
+
+            scanner.head--;
             break;
         }
 
