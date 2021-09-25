@@ -1,6 +1,13 @@
 .DEFAULT_GOAL := all
 
+UNAME = $(shell uname)
+
+ifeq ($(UNAME), Darwin)
+CC = gcc-10
+else
 CC = gcc
+endif
+
 
 CFLAGS = -std=gnu99 -Wall -Wextra -Werror -ggdb -MD -fsanitize=undefined -Isrc/ -DVERBOSE
 LDFLAGS = -fsanitize=undefined
